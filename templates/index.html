@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Tumor Classification</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/test.css') }}">
+</head>
+<body>
+    <div class="navbar">
+        <h1>Brain Tumor Classification Using Deep Learning</h1>
+    </div>
+
+    <div class="container">
+        <h2>Upload an Image</h2>
+
+        <form id="upload-form" enctype="multipart/form-data">
+            <label for="file-input" class="custom-file-upload">
+                <span class="file-upload-label">
+                    <span class="white-box">Choose File</span>
+                    <span class="no-file-chosen">No file chosen</span>
+                </span>
+                <input type="file" id="file-input" accept=".png, .jpg, .jpeg" style="display: none;">
+            </label>
+            <button type="button" id="predict-button" style="display: none;">Predict</button>
+        </form>
+
+        <div id="image-container" class="image-section">
+            <img id="image-preview" alt="Uploaded Image" style="max-width: 300px; max-height: 300px; margin: 20px auto;">
+        </div>
+
+        <div class="loader" style="display: none;">
+            Loading...
+        </div>
+
+        <div id="result" class="image-section">
+            <!-- Result will be displayed here -->
+        </div>
+
+        <div id="tumor-type" class="image-section" style="display: none;">
+            <!-- Tumor type will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("file-input").addEventListener("change", function (event) {
+            console.log("File input change event triggered");
+            var fileInput = event.target;
+            var fileNameDisplay = document.querySelector(".no-file-chosen");
+            
+            var file = fileInput.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name; // Update the text with the selected file's name
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var imagePreview = document.getElementById("image-preview");
+                    imagePreview.src = e.target.result;
+                    document.getElementById("image-container").style.display = "block";
+                    document.getElementById("predict-button").style.display = "block";
+                };
+                reader.readAsDataURL(file);
+            } else {
+                fileNameDisplay.textContent = "No file chosen"; // Reset the text if no file is selected
+            }
+        });
+        
+        document.getElementById("predict-button").addEventListener("click", function () {
+            console.log("Predict button clicked");
+
+            var fileInput = document.getElementById("file-input");
+            var file = fileInput.files[0];
+            if (file) {
+                var formData = new FormData();
+                formData.append("file", file);
+
+                document.querySelector('.loader').style.display = "block";
+
+                fetch("/predict", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(result => {
+                    console.log("Result received:", result);
+                    document.getElementById("result").textContent = result;
+
+                    // Check if the result contains "Tumor Detected" to show tumor type
+                    if (result.includes("Tumor Detected")) {
+                        document.getElementById("tumor-type").style.display = "block";
+                        getTumorType(file); // Call function to get tumor type
+                    } else {
+                        document.getElementById("tumor-type").style.display = "none";
+                    }
+
+                    document.querySelector('.loader').style.display = "none";
+                })
+                .catch(error => {
+                    console.error(error);
+                    document.querySelector('.loader').style.display = "none";
+                });
+            }
+        });
+
+        function getTumorType(file) {
+            var formData = new FormData();
+            formData.append("file", file);
+
+            fetch("/get_tumor_type", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.text())
+            .then(result => {
+                document.getElementById("tumor-type").textContent = "Tumor Type: " + result;
+            })
+            .catch(error => {
+                console.error(error);
+            });
+        }
+    </script>
+</body>
+</html>
