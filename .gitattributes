@@ -1,0 +1,4 @@
+*.html linguist-language=HTML
+*.css linguist-language=CSS
+*.py linguist-language=Python
+*.h5 linguist-language= Tensorflow
